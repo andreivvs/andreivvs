@@ -23,6 +23,12 @@
     },
     "types": [
       "node"
+    ],
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
     ]
   },
   "include": [

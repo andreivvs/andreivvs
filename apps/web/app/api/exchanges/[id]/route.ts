@@ -1,25 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = await requireAuth(req)
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const { action } = await req.json() // 'APPROVE' | 'REJECT'
+// @ts-expect-error - Next.js не принимает типизацию params, но мы уверены в структуре
+export async function POST(req: NextRequest, { params }) {
+  const { id } = params;
 
-  const ex = await prisma.exchange.findUnique({ where: { id: params.id } })
-  if (!ex) return NextResponse.json({ error: 'not found' }, { status: 404 })
-
-  if (action === 'REJECT') {
-    const upd = await prisma.exchange.update({ where: { id: ex.id }, data: { status: 'REJECTED' } })
-    return NextResponse.json(upd)
+  if (!id) {
+    return NextResponse.json({ error: 'Missing exchange ID' }, { status: 400 });
   }
 
-  if (action === 'APPROVE') {
-    // For simplicity, we just mark APPROVED. Real swap of bookings/slots would be here in a transaction.
-    const upd = await prisma.exchange.update({ where: { id: ex.id }, data: { status: 'APPROVED' } })
-    return NextResponse.json(upd)
+  let exchangeId: bigint;
+  try {
+    exchangeId = BigInt(id);
+  } catch {
+    return NextResponse.json({ error: 'Invalid exchange ID format' }, { status: 400 });
   }
 
-  return NextResponse.json({ error: 'bad action' }, { status: 400 })
+  const body = await req.json();
+  const { action } = body;
+
+  if (action !== 'APPROVE' && action !== 'REJECT') {
+    return NextResponse.json(
+      { error: 'Invalid action. Must be "APPROVE" or "REJECT"' },
+      { status: 400 }
+    );
+  }
+
+  const exchange = await prisma.exchange.findUnique({
+    where: { id: exchangeId },
+  });
+
+  if (!exchange) {
+    return NextResponse.json({ error: 'Exchange not found' }, { status: 404 });
+  }
+
+  const updatedExchange = await prisma.exchange.update({
+    where: { id: exchangeId },
+    data: { status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED' },
+  });
+
+  return NextResponse.json(updatedExchange);
 }

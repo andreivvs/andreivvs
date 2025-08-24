@@ -1,0 +1,10 @@
+[build]
+  command = "npx prisma generate && npm run build"
+  base = "/"      # Папка с Next.js
+  publish = ".next"
+
+[build.environment]
+  BOT_TOKEN = "8327779189:AAFNjcwhpCYfai2Qa-JqsprzjyCH4PP-lj4"
+  DATABASE_URL = "postgresql://postgres.hzygydetmplfrgnligsa:KQy1wE2LM55ZtBY@aws-1-eu-north-1.pooler.supabase.com:5432/postgres?schema=public"
+  JWT_SECRET = "3ecXCzfLCZDNXiuwAsYbMWMVPj1ROhXW"
+  WEBAPP_URL = "http://localhost:3000"

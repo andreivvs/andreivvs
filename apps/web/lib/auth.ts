@@ -18,6 +18,7 @@ export function isInitDataValid(initData: string) {
   return calc === hash
 }
 
+// Получаем или создаём пользователя в базе
 export async function userFromInitData(initData: string) {
   const url = new URLSearchParams(initData)
   const userStr = url.get('user')
@@ -35,23 +36,28 @@ export async function userFromInitData(initData: string) {
       telegramId: tgId,
       username: user.username || null,
       firstName: user.first_name || null,
-      lastName: user.last_name || null
+      lastName: user.last_name || null,
+      role: 'OWNER' // по умолчанию
     }
   })
   return dbUser
 }
 
+// Проверка авторизации через JWT
 export async function requireAuth(req: NextRequest) {
   const header = req.headers.get('authorization') || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : null
   if (!token) return null
   try {
-    const payload = verify<{ uid: string }>(token)
-    const user = await prisma.user.findUnique({ where: { id: payload.uid } })
+    const payload = verify<{ uid: string; role: string }>(token)
+    const user = await prisma.user.findUnique({ where: { id: Number(payload.uid) } })
     return user
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
-export function tokenForUser(user: { id: string, role: string }) {
+// Генерация токена для пользователя
+export function tokenForUser(user: { id: string; role: string }): string {
   return sign({ uid: user.id, role: user.role }, '30m')
 }

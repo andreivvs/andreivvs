@@ -1,25 +1,25 @@
 generator client {
   provider = "prisma-client-js"
+  enableTracing = false
+
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL") // миграции (всегда Direct 5432)
 }
 
 model User {
-  id         String   @id @default(cuid())
+  id        Int       @id @default(autoincrement())
+  username  String?
+  firstName String?
+  lastName  String?
   telegramId BigInt   @unique
-  username   String?
-  firstName  String?
-  lastName   String?
-  phone      String?  @db.VarChar(32)
-  email      String?  @unique
-  role       Role     @default(OWNER)
-  shares     Share[]
-  bookings   Booking[]
-  exchanges  Exchange[] @relation("UserExchanges")
-  createdAt  DateTime @default(now())
+  role      Role      @default(OWNER)
+  shares    Share[]
+  bookings  Booking[]
+  exchanges Exchange[] @relation("UserExchanges")
 }
 
 enum Role {
@@ -28,37 +28,38 @@ enum Role {
 }
 
 model Property {
-  id            String   @id @default(cuid())
-  title         String
-  location      String
-  rooms         Int
-  areaM2        Int
-  gallery       Json
-  coordinates   Json?
-  shares        Share[]
-  calendarSlots CalendarSlot[]
+  id      Int      @id @default(autoincrement())
+  title   String
+  shares  Share[]
+  slots   CalendarSlot[]
+  gallery Json?
+  location String?
+  rooms   Int?         
+  areaM2  Float? 
+  coordinates Json?
 }
 
 model Share {
-  id          String   @id @default(cuid())
-  propertyId  String
-  ownerId     String
-  fraction    String
-  property    Property @relation(fields: [propertyId], references: [id])
-  owner       User     @relation(fields: [ownerId], references: [id])
-  bookings    Booking[]
+  id         Int      @id @default(autoincrement())
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId Int
+  owner      User     @relation(fields: [ownerId], references: [id])
+  ownerId    Int
+  bookings   Booking[]
+  fraction   String?
 }
 
 model CalendarSlot {
-  id          String   @id @default(cuid())
-  propertyId  String
-  startDate   DateTime
-  endDate     DateTime
-  type        SlotType
-  priority    Boolean  @default(false)
-  booking     Booking?
-  property    Property @relation(fields: [propertyId], references: [id])
+  id         String   @id @default(cuid())
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId Int
+  startDate  DateTime
+  endDate    DateTime
+  type       SlotType
+  priority   Boolean  @default(false)
+  bookings   Booking[] // связь через Booking.slotId
 }
+
 
 enum SlotType {
   AVAILABLE
@@ -67,16 +68,18 @@ enum SlotType {
 }
 
 model Booking {
-  id           String   @id @default(cuid())
-  shareId      String
-  slotId       String   @unique
-  status       BookingStatus @default(PENDING)
-  requestedAt  DateTime @default(now())
-  confirmedAt  DateTime?
-  comment      String?
-  share        Share   @relation(fields: [shareId], references: [id])
-  slot         CalendarSlot @relation(fields: [slotId], references: [id])
+  id          Int           @id @default(autoincrement())
+  slot        CalendarSlot  @relation(fields: [slotId], references: [id])
+  slotId      String
+  user        User          @relation(fields: [userId], references: [id])
+  userId      Int
+  share       Share         @relation(fields: [shareId], references: [id])
+  shareId     Int
+  status      BookingStatus
+  requestedAt DateTime      @default(now()) // <-- поле для сортировки
 }
+
+
 
 enum BookingStatus {
   PENDING
@@ -86,16 +89,17 @@ enum BookingStatus {
 }
 
 model Exchange {
-  id            String   @id @default(cuid())
-  requesterId   String
-  fromBookingId String
-  targetPropId  String
+  id            BigInt         @id @default(autoincrement())
+  requester     User           @relation("UserExchanges", fields: [requesterId], references: [id])
+  requesterId   Int
+  fromBookingId Int
+  targetPropId  Int
   targetSlotId  String
-  status        ExchangeStatus @default(PENDING)
   message       String?
   history       Json?
-  requester     User     @relation("UserExchanges", fields: [requesterId], references: [id])
+  status        ExchangeStatus @default(PENDING)
 }
+
 
 enum ExchangeStatus {
   PENDING
