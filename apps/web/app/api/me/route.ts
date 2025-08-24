@@ -79,7 +79,7 @@ export async function POST(req: Request) {
         username,
         firstName,
         lastName,
-        role: 'USER',
+        role: 'OWNER',
       },
     });
   }
