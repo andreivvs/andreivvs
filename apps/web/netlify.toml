@@ -1,6 +1,6 @@
 [build]
-  command = "npx prisma generate && npm run build"
-  base = "/"      # Папка с Next.js
+  command = "npm run build"
+  base = "apps/web"      
   publish = ".next"
 
 [build.environment]
