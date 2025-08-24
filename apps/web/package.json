@@ -38,8 +38,4 @@
     "tsx": "4.16.2",
     "typescript": "5.4.5"
   }
-  "scripts": {
-  "build": "next build",
-  "postinstall": "npx prisma generate"
-}
-}
+ }
