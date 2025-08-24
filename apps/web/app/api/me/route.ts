@@ -26,12 +26,13 @@ export async function POST(req: Request) {
   let user = await prisma.user.findUnique({ where: { telegramId: BigInt(tgData.id) } });
   if (!user) {
     user = await prisma.user.create({
-        telegramId: BigInt(tgData.id),
-        username: tgData.username ?? null,
-        firstName: tgData.first_name ?? null,
-        lastName: tgData.last_name ?? null,
-      },
-    );
+   {
+    telegramId: BigInt(tgData.id),
+    username: tgData.username ?? null,
+    firstName: tgData.first_name ?? null,
+    lastName: tgData.last_name ?? null,
+  },
+});
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: '7d' });
